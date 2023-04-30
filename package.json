@@ -1,0 +1,66 @@
+{
+	"name": "vsc-live-share-pocketbase",
+	"displayName": "VSC Live Share (Pocketbase)",
+	"publisher": "ChronSyn",
+	"license": "MIT",
+	"author": {
+		"name": "Scott Pritchard"
+	},
+	"description": "Access other local VSC Live Share sessions by using PocketBase",
+	"version": "1.0.0",
+	"engines": {
+		"vscode": "^1.33.0"
+	},
+	"galleryBanner": {
+		"color": "#C80000",
+		"theme": "dark"
+	},
+	"categories": [
+		"Other"
+	],
+	"main": "./dist/extension",
+	"contributes": {
+		"configuration": {
+			"title": "VSC Live Share (Pocketbase)",
+			"properties": {
+				"vscls.pocketbaseUrl": {
+					"type": "string",
+					"default": "http://localhost:3000",
+					"description": "The base URL of the PocketBase server, including port and protocol"
+				}
+			}
+		},
+		"commands": [
+			{
+				"command": "extension.createSession",
+				"title": "VSCLS: Create session"
+			},
+			{
+				"command": "extension.listSessions",
+				"title": "VSCLS: List sessions"
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "webpack --mode production",
+		"compile": "webpack --mode none",
+		"watch": "webpack --mode none --watch",
+		"build": "yarn tsc -p ./ && yarn vscode:prepublish"
+	},
+	"devDependencies": {
+		"@types/node": "^10.12.21",
+		"ts-loader": "^6.0.0",
+		"tslint": "^5.12.1",
+		"typescript": "^5.0.4",
+		"vscode": "^1.1.34",
+		"webpack": "^4.31.0",
+		"webpack-cli": "^3.3.2",
+		"webpack-node-externals": "^1.7.2"
+	},
+	"dependencies": {
+		"@types/vscode": "^1.77.0",
+		"cross-fetch": "^3.1.5",
+		"pocketbase": "^0.14.3",
+		"vsls": "^1.0.4753"
+	}
+}
