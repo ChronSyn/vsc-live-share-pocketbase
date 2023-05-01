@@ -1,7 +1,7 @@
 {
 	"name": "vsc-live-share-pocketbase",
 	"displayName": "VSC Live Share (Pocketbase)",
-	"publisher": "ChronSyn",
+	"publisher": "ScottPritchard",
 	"license": "MIT",
 	"author": {
 		"name": "Scott Pritchard"
