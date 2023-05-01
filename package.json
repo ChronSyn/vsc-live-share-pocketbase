@@ -19,6 +19,14 @@
 		"Other"
 	],
 	"main": "./dist/extension",
+	"activationEvents": [
+		"onCommand:extension.createSession",
+		"onCommand:extension.listSessions"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ChronSyn/vsc-live-share-pocketbase"
+	},
 	"contributes": {
 		"configuration": {
 			"title": "VSC Live Share (Pocketbase)",
@@ -42,10 +50,10 @@
 		]
 	},
 	"scripts": {
-		"vscode:prepublish": "webpack --mode production",
+		"vscode:prepublish": "yarn build",
 		"compile": "webpack --mode none",
 		"watch": "webpack --mode none --watch",
-		"build": "yarn tsc -p ./ && yarn vscode:prepublish"
+		"build": "yarn tsc -p ./ && webpack --mode production"
 	},
 	"devDependencies": {
 		"@types/node": "^10.12.21",
