@@ -9,7 +9,6 @@ const pocketbaseInstance = new PocketBase(vscode.workspace.getConfiguration('vsc
 const sessionsCollectionName = 'vscode_live_share_sessions';
 
 const listSessions = async () => {
-  console.log({pocketbaseInstance})
   try {
     const resultList = await pocketbaseInstance
       .collection(sessionsCollectionName)
@@ -124,21 +123,28 @@ export function activate(context: vscode.ExtensionContext) {
       const selectedSession = await vscode.window.showQuickPick(
         sessionQuickPickItems,
         {
-          onDidSelectItem: async (item: ISelectSessionDropdown) => {
-            const liveshare = await getVslsApi();
-            if (liveshare === null) {
-              return
-            }
-            await liveshare.end();
-            if (!item.meta.sessionUrl) {
-              return
-            }
-            // convert item.meta.sessionUrl to vscode.Uri
-            const sessionUrl = vscode.Uri.parse(item.meta.sessionUrl)
-            liveshare.join(sessionUrl)
-          }
+          canPickMany: false,
         },
       );
+
+
+      if (!selectedSession) {
+        return;
+      }
+
+      const liveshare = await getVslsApi();
+      if (!liveshare) {
+        return;
+      }
+      await liveshare.end();
+      //@ts-ignore
+      if (!selectedSession.meta.sessionUrl) {
+        return;
+      }
+      // convert item.meta.sessionUrl to vscode.Uri
+      //@ts-ignore
+      const sessionUrl = vscode.Uri.parse(selectedSession.meta.sessionUrl);
+      liveshare.join(sessionUrl);
     }
   );
 
