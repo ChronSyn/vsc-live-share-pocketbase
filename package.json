@@ -1,13 +1,13 @@
 {
 	"name": "vsc-live-share-pocketbase",
-	"displayName": "VSC Live Share (Pocketbase)",
+	"displayName": "_VSC Live Share (Pocketbase)",
 	"publisher": "ScottPritchard",
 	"license": "MIT",
 	"author": {
 		"name": "Scott Pritchard"
 	},
 	"description": "Access other local VSC Live Share sessions by using PocketBase",
-	"version": "1.0.2",
+	"version": "1.1.0",
 	"engines": {
 		"vscode": "^1.33.0"
 	},
@@ -35,6 +35,16 @@
 					"type": "string",
 					"default": "http://localhost:3000",
 					"description": "The base URL of the PocketBase server, including port and protocol"
+				},
+				"vscls.pocketbaseAuthEmail": {
+					"type": "string",
+					"default": "",
+					"description": "The admin email to use when authenticating with the PocketBase server. You may choose to leave this blank if your pocketbase table is public."
+				},
+				"vscls.pocketbaseAuthPassword": {
+					"type": "string",
+					"default": "",
+					"description": "The admin password to use when authenticating with the PocketBase server. You may choose to leave this blank if your pocketbase table is public."
 				}
 			}
 		},

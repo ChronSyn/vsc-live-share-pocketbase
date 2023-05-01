@@ -11,9 +11,8 @@ Allows you to access VS Code Live Sessions from your other devices by storing se
     - `sessionUrl` (string)
     - `projectName` (string)
     - `deviceName` (string)
- 4. In the `API Rules` table for the collection, ensure that you unrestrict the table
-    - **NOTE:** In the future, it will be possible to use an admin account with this extension
- 5. Open VSCode settings and set the `vscls.pocketbaseUrl` to your Pocketbase instance URL
+ 4. Open VSCode settings and set the 'Pocketbase URL' (`vscls.pocketbaseUrl`) to your Pocketbase instance URL
+ 5. If your collection is set to 'admin only', you should set the 'Pocketbase Auth Email' (`vscls.pocketbaseEmail`) and 'Pocketbase Auth Password' (`vscls.pocketbasePassword`) settings to your Pocketbase email and password
 
 ## How to use it
 

@@ -5,15 +5,54 @@ import * as vsls from "vsls/vscode";
 import "cross-fetch/polyfill";
 
 const PocketBase = require("pocketbase/cjs");
+
+// import pb from "pocketbase";
+// const _pb = new pb('')
+
+// const login = async () => {
+//   const authRes = await _pb.admins.authWithPassword('', '')
+//   if (!authRes?.token) {
+//     vscode.window.showErrorMessage(`There was an error authenticating to your pocketbase instance. Please ensure that you have configured your Pocketbase email and password in the VSCode settings (vscls.pocketbaseAuthEmail / vscls.pocketbaseAuthPassword)`);
+//     return pocketbaseInstance;
+//   }
+// }
+
 const pocketbaseInstance = new PocketBase(vscode.workspace.getConfiguration('vscls').get('pocketbaseUrl'));
+
+const authToPocketbase = async () => {
+  try {
+    const authEmail = vscode.workspace.getConfiguration('vscls').get('pocketbaseAuthEmail');
+    const authPassword = vscode.workspace.getConfiguration('vscls').get('pocketbaseAuthPassword');
+
+    if (!authEmail || !authPassword) {
+      return pocketbaseInstance;
+    }
+
+    const authRes = await pocketbaseInstance.admins.authWithPassword(authEmail, authPassword);
+    if (!authRes?.token) {
+      vscode.window.showErrorMessage(`There was an error authenticating to your pocketbase instance. Please ensure that you have configured your Pocketbase email and password in the VSCode settings (vscls.pocketbaseAuthEmail / vscls.pocketbaseAuthPassword)`);
+      return null;
+    }
+    return pocketbaseInstance;
+  } catch (err) {
+    vscode.window.showErrorMessage(`There was an error authenticating to your pocketbase instance. Please ensure that you have configured your Pocketbase email and password in the VSCode settings (vscls.pocketbaseAuthEmail / vscls.pocketbaseAuthPassword)`);
+    return null;
+  }
+
+  // return pocketbaseInstance;
+}
+
 const sessionsCollectionName = 'vscode_live_share_sessions';
 
 const listSessions = async () => {
   try {
+    const session = await authToPocketbase();
+    if (!session) {
+      return null
+    }
     const resultList = await pocketbaseInstance
       .collection(sessionsCollectionName)
       .getList(1, 1000);
-    console.log(resultList);
     return resultList;
   } catch (err) {
     vscode.window.showErrorMessage(`There was an error listing sessions: ${err} - Please ensure that you have configured your Pocketbase URL in the VSCode settings (vscls.pocketbaseUrl)`);
@@ -46,8 +85,11 @@ interface ISelectSessionDropdown {
 }
 
 const createSession = async (args: ICreateSessionArgs) => {
+  const session = await authToPocketbase();
+  if (!session) {
+    return null
+  }
   const record = await pocketbaseInstance.collection(sessionsCollectionName).create(args);
-  console.log(record);
   return record;
 };
 
@@ -56,6 +98,11 @@ export function activate(context: vscode.ExtensionContext) {
   const createSessionCommand = vscode.commands.registerCommand(
     "extension.createSession",
     async () => {
+      const session = await authToPocketbase();
+      if (!session) {
+        return null
+      }
+      
       const liveshare = await getVslsApi();
       if (liveshare === null) {
         return;
@@ -78,7 +125,7 @@ export function activate(context: vscode.ExtensionContext) {
       const { machineId } = vscode.env;
       await liveshare.end();
       const sessionUrl = await liveshare.share().catch((err) => {
-        console.log('Error sharing session', err)
+        vscode.window.showErrorMessage(`There was an error sharing your session: ${err}. This is an error with the 'VSCode Live Share' extension and not with the 'VSC Live Share (Pocketbase)' extension.`);
       })
       const clipboardUrl = await vscode.env.clipboard.readText();
       const finalSessionUrl = (sessionUrl ?? clipboardUrl).toString();
@@ -100,7 +147,15 @@ export function activate(context: vscode.ExtensionContext) {
   const listSessionsCommand = vscode.commands.registerCommand(
     "extension.listSessions",
     async () => {
+      const session = await authToPocketbase();
+      if (!session) {
+        return null
+      }
+
       const sessions = await listSessions();
+      if (!sessions) {
+        return;
+      }
 
       // Add the sessions to the command palette / quick pick
       // When user selects a session, join the session
