@@ -17,6 +17,21 @@ const PocketBase = require("pocketbase/cjs");
 //   }
 // }
 
+const deleteSession = async (id: string) => {
+  try {
+    const session = await authToPocketbase();
+    if (!session) {
+      return null
+    }
+    const deleteRes = await pocketbaseInstance
+      .collection(sessionsCollectionName)
+      .delete(id);
+    return deleteRes;
+  } catch (err) {
+    vscode.window.showErrorMessage(`There was an error deleting the session: ${err}`);
+  }
+}
+
 const pocketbaseInstance = new PocketBase(vscode.workspace.getConfiguration('vscls').get('pocketbaseUrl'));
 
 const authToPocketbase = async () => {
@@ -108,12 +123,16 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
 
-      // Get the device name from VSCode
-      const deviceName = await vscode.window.showInputBox({
-        prompt: "Enter a name for this device",
-        placeHolder: vscode.env.machineId ?? '',
-        value: vscode.env.machineId ?? '',
-      });
+      let thisDeviceName = vscode.workspace.getConfiguration('vscls').get('thisDeviceName') as string;
+      if (!thisDeviceName || (thisDeviceName ?? '')?.length === 0) {
+        // Get the device name from VSCode
+        const deviceName = await vscode.window.showInputBox({
+          prompt: "Enter a name for this device",
+          placeHolder: vscode.env.machineId ?? '',
+          value: vscode.env.machineId ?? '',
+        });
+        thisDeviceName = deviceName ?? vscode.env.machineId ?? '';
+      }
 
       // Get the project/workspace name from VSCode
       const projectName = await vscode.window.showInputBox({
@@ -136,7 +155,7 @@ export function activate(context: vscode.ExtensionContext) {
       const createdSession = await createSession({
         machineId,
         sessionUrl: finalSessionUrl.toString(),
-        deviceName: deviceName ?? vscode.env.machineId ?? '',
+        deviceName: thisDeviceName ?? vscode.env.machineId ?? '',
         projectName: projectName ?? vscode.workspace.name ?? '',
       });
       return createdSession;
@@ -203,13 +222,72 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+
+  // DELETE SESSION
+  const deleteSessionCommand = vscode.commands.registerCommand(
+    "extension.deleteSession",
+    async () => {
+      const session = await authToPocketbase();
+      if (!session) {
+        return null
+      }
+
+      const sessions = await listSessions();
+      if (!sessions) {
+        return;
+      }
+
+      // Add the sessions to the command palette / quick pick
+      // When user selects a session, join the session
+      const { machineId } = vscode.env;
+      const sessionQuickPickItems = sessions
+        .items
+        // .filter(
+        //   // Remove any sessions that are from this machine as we can't join sessions on the same machine (due to a session already being active)
+        //   (item: ICreateSessionArgs) => item.machineId !== machineId
+        // )
+        .map((session: any) => {
+          return {
+            label: `${session.projectName} ${session.sessionUrl ? `(${session.sessionUrl})` : ''}`,
+            description: `${session.deviceName} ${session.machineId ? `(${session.machineId})` : ''}`,
+            detail: `${session.deviceName} ${session.machineId ? `(${session.machineId})` : ''}`,
+            meta: session,
+          };
+        });
+
+      const selectedSession = await vscode.window.showQuickPick(
+        sessionQuickPickItems,
+        {
+          canPickMany: false,
+        },
+      );
+
+
+      if (!selectedSession) {
+        return;
+      }
+      const liveshare = await getVslsApi();
+      if (!liveshare) {
+        return;
+      }
+      await liveshare.end();
+
+      //@ts-ignore
+      await deleteSession(selectedSession.meta.id);
+    }
+  );
+
   context.subscriptions.push(createSessionCommand);
   context.subscriptions.push(listSessionsCommand);
+  context.subscriptions.push(deleteSessionCommand);
 
   if (!context.subscriptions.find((s) => s === createSessionCommand)) {
   }
 
   if (!context.subscriptions.find((s) => s === listSessionsCommand)) {
+  }
+
+  if (!context.subscriptions.find((s) => s === deleteSessionCommand)) {
   }
 }
 

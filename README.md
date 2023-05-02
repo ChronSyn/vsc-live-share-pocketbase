@@ -1,4 +1,4 @@
-# VSC Local Sessions
+# VSC Local Sessions (Pocketbase)
 
 Allows you to access VS Code Live Sessions from your other devices by storing session data in a Pocketbase DB.
 
@@ -13,6 +13,7 @@ Allows you to access VS Code Live Sessions from your other devices by storing se
     - `deviceName` (string)
  4. Open VSCode settings and set the 'Pocketbase URL' (`vscls.pocketbaseUrl`) to your Pocketbase instance URL
  5. If your collection is set to 'admin only', you should set the 'Pocketbase Auth Email' (`vscls.pocketbaseEmail`) and 'Pocketbase Auth Password' (`vscls.pocketbasePassword`) settings to your Pocketbase email and password
+ 6. You can also set your device name in the 'This device name' (`vscls.thisDeviceName`) setting. If you don't set this, you will be prompted to provide a name each time you create a session
 
 ## How to use it
 
@@ -27,6 +28,7 @@ Once the session is started, you can access it from any other device by pressing
 
 * `VSCLS: Create session` - Creates a new VSCode Live Share session and stores the session data in your Pocketbase DB
 * `VSCLS: List sessions` - Retrieves all sessions from your Pocketbase DB
+* `VSCLS: Delete session` - Lists all available sessions - selecting one will delete it from your Pocketbase DB (**note: it doesn't end the live share session currently**)
 
 ## Development
 
