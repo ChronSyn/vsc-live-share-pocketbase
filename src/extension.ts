@@ -6,10 +6,12 @@ import "cross-fetch/polyfill";
 
 const PocketBase = require("pocketbase/cjs");
 
+const sessionsCollectionName = 'vscode_live_share_sessions';
+
 // import pb from "pocketbase";
 // const _pb = new pb('')
 
-// const login = async () => {
+// const login = async (args: ICreateSessionArgs) => {
 //   const authRes = await _pb.admins.authWithPassword('', '')
 //   if (!authRes?.token) {
 //     vscode.window.showErrorMessage(`There was an error authenticating to your pocketbase instance. Please ensure that you have configured your Pocketbase email and password in the VSCode settings (vscls.pocketbaseAuthEmail / vscls.pocketbaseAuthPassword)`);
@@ -17,20 +19,31 @@ const PocketBase = require("pocketbase/cjs");
 //   }
 // }
 
-const deleteSession = async (id: string) => {
-  try {
-    const session = await authToPocketbase();
-    if (!session) {
-      return null
-    }
-    const deleteRes = await pocketbaseInstance
-      .collection(sessionsCollectionName)
-      .delete(id);
-    return deleteRes;
-  } catch (err) {
-    vscode.window.showErrorMessage(`There was an error deleting the session: ${err}`);
-  }
+const promptForProjectName = async () => {
+  const projectName = await vscode.window.showInputBox({
+    prompt: "Enter a name for this project",
+    placeHolder: vscode.workspace.name ?? '',
+    value: vscode.workspace.name ?? ''
+  });
+  return projectName;
 }
+
+const promptForDeviceName = async () => {
+  let thisDeviceName = vscode.workspace.getConfiguration('vscls').get('thisDeviceName') as string;
+  if (!thisDeviceName || (thisDeviceName ?? '')?.length === 0) {
+    // Get the device name from VSCode
+    const deviceName = await vscode.window.showInputBox({
+      prompt: "Enter a name for this device",
+      placeHolder: vscode.env.machineId ?? '',
+      value: vscode.env.machineId ?? '',
+    });
+    thisDeviceName = deviceName ?? vscode.env.machineId ?? '';
+  }
+  return thisDeviceName;
+}
+
+
+
 
 const pocketbaseInstance = new PocketBase(vscode.workspace.getConfiguration('vscls').get('pocketbaseUrl'));
 
@@ -57,7 +70,7 @@ const authToPocketbase = async () => {
   // return pocketbaseInstance;
 }
 
-const sessionsCollectionName = 'vscode_live_share_sessions';
+
 
 const listSessions = async () => {
   try {
@@ -73,6 +86,22 @@ const listSessions = async () => {
     vscode.window.showErrorMessage(`There was an error listing sessions: ${err} - Please ensure that you have configured your Pocketbase URL in the VSCode settings (vscls.pocketbaseUrl)`);
   }
 };
+
+
+const deleteSession = async (id: string) => {
+  try {
+    const session = await authToPocketbase();
+    if (!session) {
+      return null
+    }
+    const deleteRes = await pocketbaseInstance
+      .collection(sessionsCollectionName)
+      .delete(id);
+    return deleteRes;
+  } catch (err) {
+    vscode.window.showErrorMessage(`There was an error deleting the session: ${err}`);
+  }
+}
 
 interface ICreateSessionArgs {
   machineId: string;
@@ -108,6 +137,39 @@ const createSession = async (args: ICreateSessionArgs) => {
   return record;
 };
 
+const upsertSession = async (args: ICreateSessionArgs) => {
+  const session = await authToPocketbase();
+  if (!session) {
+    return null
+  }
+
+  if (!args?.deviceName || (args.deviceName ?? '')?.length === 0) {
+    const newSession = await createSession(args)
+    return newSession;
+  }
+
+  const filter = `machineId = '${args?.machineId}' && projectName = '${args?.projectName}' && deviceName = '${args?.deviceName}'`;
+
+  const currentProjects = await pocketbaseInstance.collection(sessionsCollectionName).getFullList({
+    filter,
+  })
+
+  if ((currentProjects ?? []).length <= 0) {
+    const newSession = await createSession(args)
+    return newSession;
+  }
+
+  if (!currentProjects?.[0]) {
+    const newSession = await createSession(args)
+    return newSession;
+  }
+
+  // If there is already a session for this device, create a new live share session and update the existing DB entry
+  const currentProject = currentProjects[0];
+  const newSession = await pocketbaseInstance.collection(sessionsCollectionName).update(currentProject.id, args);
+  return newSession;
+};
+
 export function activate(context: vscode.ExtensionContext) {
   // CREATE SESSION
   const createSessionCommand = vscode.commands.registerCommand(
@@ -123,23 +185,8 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
 
-      let thisDeviceName = vscode.workspace.getConfiguration('vscls').get('thisDeviceName') as string;
-      if (!thisDeviceName || (thisDeviceName ?? '')?.length === 0) {
-        // Get the device name from VSCode
-        const deviceName = await vscode.window.showInputBox({
-          prompt: "Enter a name for this device",
-          placeHolder: vscode.env.machineId ?? '',
-          value: vscode.env.machineId ?? '',
-        });
-        thisDeviceName = deviceName ?? vscode.env.machineId ?? '';
-      }
-
-      // Get the project/workspace name from VSCode
-      const projectName = await vscode.window.showInputBox({
-        prompt: "Enter a name for this project",
-        placeHolder: vscode.workspace.name ?? '',
-        value: vscode.workspace.name ?? ''
-      });
+      const thisDeviceName = await promptForDeviceName()
+      const projectName = await promptForProjectName();
 
       const { machineId } = vscode.env;
       await liveshare.end();
@@ -150,6 +197,17 @@ export function activate(context: vscode.ExtensionContext) {
       const finalSessionUrl = (sessionUrl ?? clipboardUrl).toString();
       if (!finalSessionUrl) {
         return;
+      }
+
+      const shouldUpdateExistingSession = (vscode.workspace.getConfiguration('vscls').get('overwriteExistingProject') ?? true) as boolean;
+      if (shouldUpdateExistingSession) {
+        const createdSession = await upsertSession({
+          machineId,
+          sessionUrl: finalSessionUrl.toString(),
+          deviceName: thisDeviceName ?? vscode.env.machineId ?? '',
+          projectName: projectName ?? vscode.workspace.name ?? '',
+        });
+        return createdSession;
       }
 
       const createdSession = await createSession({
@@ -188,8 +246,8 @@ export function activate(context: vscode.ExtensionContext) {
         .map((session: any) => {
           return {
             label: `${session.projectName} ${session.sessionUrl ? `(${session.sessionUrl})` : ''}`,
-            description: `${session.deviceName} ${session.machineId ? `(${session.machineId})` : ''}`,
-            detail: `${session.deviceName} ${session.machineId ? `(${session.machineId})` : ''}`,
+            description: `[${session?.updated ?? session?.created ?? ''}] ${session.deviceName} ${session.machineId ? `(${session.machineId})` : ''}`,
+            detail: `[${session?.updated ?? session?.created ?? ''}] ${session.deviceName} ${session.machineId ? `(${session.machineId})` : ''}`,
             meta: session,
           };
         });

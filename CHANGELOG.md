@@ -25,3 +25,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [1.3.0] - 2023-05-02
 
 - Added support for deleting sessions from the command palette. Note - this doesn't (currently) end the session on the device, it just removes it from the list of sessions in the DB
+
+## [1.4.0] - 2023-05-02
+
+- Added support for upserting sessions, which will overwrite an existing DB entry. This behaviour can be configured via settings (vscls.overwriteExistingProject)
+
+
+## [1.4.2] - 2023-07-24
+
+- Updated or created date of session will now show in the session list

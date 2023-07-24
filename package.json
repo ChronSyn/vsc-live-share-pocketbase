@@ -7,7 +7,7 @@
 		"name": "Scott Pritchard"
 	},
 	"description": "Access other local VSC Live Share sessions by using PocketBase",
-	"version": "1.3.0",
+	"version": "1.4.2",
 	"engines": {
 		"vscode": "^1.33.0"
 	},
@@ -52,6 +52,11 @@
 					"default": "",
 					"description": "The name of this device, as it will appear in the PocketBase table. You may choose to leave this blank if you'd like to be prompted each time you create a session.",
 					"ignoreSync": true
+				},
+				"vscls.overwriteExistingProject": {
+					"type": "boolean",
+					"default": true,
+					"description": "If true, this will attempt to update an existing DB entry with the new Live Share session details. If a suitable entry doesn't already exist, a new one will be created. If this is set to false, a new DB entry will always be created."
 				}
 			}
 		},
