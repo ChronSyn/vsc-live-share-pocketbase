@@ -7,9 +7,9 @@
 		"name": "Scott Pritchard"
 	},
 	"description": "Access other local VSC Live Share sessions by using PocketBase",
-	"version": "1.4.2",
+	"version": "1.5.0",
 	"engines": {
-		"vscode": "^1.33.0"
+		"vscode": "^1.75.0"
 	},
 	"galleryBanner": {
 		"color": "#C80000",
@@ -19,11 +19,6 @@
 		"Other"
 	],
 	"main": "./dist/extension",
-	"activationEvents": [
-		"onCommand:extension.createSession",
-		"onCommand:extension.listSessions",
-		"onCommand:extension.deleteSession"
-	],
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/ChronSyn/vsc-live-share-pocketbase"
@@ -38,14 +33,12 @@
 					"description": "The base URL of the PocketBase server, including port and protocol"
 				},
 				"vscls.pocketbaseAuthEmail": {
-					"type": "string",
 					"default": "",
-					"description": "The admin email to use when authenticating with the PocketBase server. You may choose to leave this blank if your pocketbase table is public."
+					"markdownDescription": "**NO LONGER SUPPORTED - run `VSCLS: Configure server` instead**\nThe admin email to use when authenticating with the PocketBase server. This value cannot be blank."
 				},
 				"vscls.pocketbaseAuthPassword": {
-					"type": "string",
 					"default": "",
-					"description": "The admin password to use when authenticating with the PocketBase server. You may choose to leave this blank if your pocketbase table is public."
+					"markdownDescription": "**NO LONGER SUPPORTED - run `VSCLS: Configure server` instead**\nThe admin password to use when authenticating with the PocketBase server. This value cannot be blank."
 				},
 				"vscls.thisDeviceName": {
 					"type": "string",
@@ -72,6 +65,14 @@
 			{
 				"command": "extension.deleteSession",
 				"title": "VSCLS: Delete session"
+			},
+			{
+				"command": "extension.configureServer",
+				"title": "VSCLS: Configure server"
+			},
+			{
+				"command": "extension.clearCredentials",
+				"title": "VSCLS: Clear stored login credentials"
 			}
 		]
 	},
@@ -87,7 +88,7 @@
 		"ts-loader": "^6.0.0",
 		"tslint": "^5.12.1",
 		"typescript": "^5.0.4",
-		"vscode": "^1.1.34",
+		"vscode": "^1.1.37",
 		"webpack": "^4.31.0",
 		"webpack-cli": "^3.3.2",
 		"webpack-node-externals": "^1.7.2"
