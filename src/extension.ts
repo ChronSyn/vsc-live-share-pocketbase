@@ -377,11 +377,19 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         debugLog(`Session is not null in createSessionCommand - it is:`)
-        debugLog(JSON.stringify(session))
+        try {
+          debugLog(JSON.stringify(session))
+        } catch (err) {
+          debugLog('Unable to show as json stringify errored')
+        }
         
         const liveshare = await getVslsApi();
         debugLog(`Liveshare is:`)
-        debugLog(JSON.stringify(liveshare))
+        try {
+          debugLog(JSON.stringify(liveshare))
+        } catch (err) {
+          debugLog('Unable to show as json stringify errored')
+        }
         if (liveshare === null) {
           debugLog(`Liveshare is null in createSessionCommand`)
           return;
